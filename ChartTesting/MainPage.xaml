@@ -22,22 +22,13 @@
                        PaintSurface="canvasView_Ohlc"
                            Grid.Row="0"
                            Grid.Column="0"/>
-
+        
+        <!-- CanvasView occupying 1/3 page -  Volume chart. -->
         <skia:SKCanvasView x:Name="volume_CanvasView"
                        PaintSurface="canvasView_volume"
                            Grid.Row="1"
                            Grid.Column="0"/>
 
-        <!-- Grid occupying 1/3 page - Volume chart. -->
-        <!--<AbsoluteLayout Grid.Row="1"
-                        Grid.Column="0"
-                        BackgroundColor="LightGray">
-            <Grid x:Name="volume"
-                    ColumnSpacing="1"
-                    AbsoluteLayout.LayoutBounds="0, 0, 1, 1"
-                    AbsoluteLayout.LayoutFlags="All" />
-
-        </AbsoluteLayout>-->
     </Grid>
     
 </ContentPage>
