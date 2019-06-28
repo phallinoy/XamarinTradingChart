@@ -23,28 +23,16 @@ namespace ChartTesting
     {
         JObject json;
 
-        SKPaint ocPaintPos = new SKPaint
+        SKPaint openCloseStickPaint = new SKPaint
         {
             Style = SKPaintStyle.Fill,
             Color = SKColors.Green
         };
 
-        SKPaint ocPaintNeg = new SKPaint
-        {
-            Style = SKPaintStyle.Fill,
-            Color = SKColors.Red
-        };
-
-        SKPaint volumeBarPaintPos = new SKPaint
+        SKPaint volumeBarPaint = new SKPaint
         {
             Style = SKPaintStyle.Fill,
             Color = SKColors.Gray
-        };
-
-        SKPaint volumeBarPaintNeg = new SKPaint
-        {
-            Style = SKPaintStyle.Fill,
-            Color = SKColors.DarkGray
         };
 
         public MainPage()
@@ -55,9 +43,9 @@ namespace ChartTesting
 
         }
 
+        // Get JSON data
         void GetJsonData()
         {
-            // Get JSON data
             string jsonFileName = "chart-legs.json";
             var assembly = typeof(MainPage).GetTypeInfo().Assembly;
             Stream stream = assembly.GetManifestResourceStream($"{assembly.GetName().Name}.{jsonFileName}");
@@ -66,11 +54,11 @@ namespace ChartTesting
                 var jsonString = reader.ReadToEnd();
                 json = JObject.Parse(jsonString);
             }
-            return ;
+            return;
         }
 
-        // Add OHLC chart
-        private void canvasView_Ohlc(object sender, SKPaintSurfaceEventArgs e)
+        // Plot chart
+        private void ChartCanvas_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
         {
             // Get Canvas info
             SKImageInfo info = e.Info;
@@ -79,87 +67,58 @@ namespace ChartTesting
 
             canvas.Clear(SKColors.White);
 
+            float canvasHeight = ChartCanvasView.CanvasSize.Height;
+            float canvasWidth = ChartCanvasView.CanvasSize.Width;
+
             // Get LegList data from JSON
             var propLegList = json["LegList"];
             int legListNumber = propLegList.Count();
+            float xPointOpenClose = 0;
+            float xPointHighLow = 0;
 
             // Plot the data in chart
             foreach (var prop in propLegList)
             {
-                float ohlcCanvasHeight = ohlc_CanvasView.CanvasSize.Height;
-                float ohlcCanvasWidth = ohlc_CanvasView.CanvasSize.Width;
-                float candleStickWidth = ohlcCanvasWidth / legListNumber;
+                float openCloseStickWidth = canvasWidth / legListNumber;
+
                 float highPrice = (float)prop[2];
                 float lowPrice = (float)prop[3];
                 float openPrice = (float)prop[4];
                 float closePrice = (float)prop[5];
-                float xTranslate = candleStickWidth;
+                float yPointHighLow = (canvasHeight / 2) - highPrice;
+                float openCloseHeight = System.Math.Abs(openPrice - closePrice);
                 float highLowHeight = highPrice - lowPrice;
-                float ocCenter = candleStickWidth / 2;
+                float yPointOpenClose = 0;
+                xPointHighLow += openCloseStickWidth / 2;
 
-                // Plot candleSticks
-                // Compare openPrice and closePrice and plot them based on color
                 if (openPrice <= closePrice)
                 {
-                    float openCloseHeight = (openPrice - closePrice);
-                    canvas.DrawRect(ocCenter, ohlcCanvasHeight - highPrice, 2, highLowHeight, volumeBarPaintNeg);
-                    canvas.DrawRect(0, ohlcCanvasHeight - closePrice, candleStickWidth, openCloseHeight, ocPaintPos);
-                    canvas.Translate(xTranslate, 0);
+                    yPointOpenClose = (canvasHeight / 2) - closePrice;
+                    openCloseStickPaint.Color = SKColors.Green;
+                    volumeBarPaint.Color = SKColors.Gray;
                 }
                 else
                 {
-                    float openCloseHeight = (closePrice - openPrice);
-                    canvas.DrawRect(ocCenter, ohlcCanvasHeight - highPrice, 2, highLowHeight, volumeBarPaintNeg);
-                    canvas.DrawRect(0, ohlcCanvasHeight - openPrice, candleStickWidth, openCloseHeight, ocPaintNeg);
-                    canvas.Translate(xTranslate, 0);
+                    yPointOpenClose = (canvasHeight / 2) - openPrice;
+                    openCloseStickPaint.Color = SKColors.Red;
+                    volumeBarPaint.Color = SKColors.DarkGray;
                 }
 
-                //System.Diagnostics.Debug.WriteLine("__open__" + prop[4]);
-                //System.Diagnostics.Debug.WriteLine("__close__" + prop[5]);
+                // Plot OHLC chart
+                canvas.DrawRect(xPointHighLow - 1, yPointHighLow, 2, highLowHeight, volumeBarPaint);
+                canvas.DrawRect(xPointOpenClose, yPointOpenClose, openCloseStickWidth, openCloseHeight, openCloseStickPaint);
 
-            }
+                // Plot Volume chart
+                float volume = (float)prop[6] / 100;
+                float yPointVolume = canvasHeight - volume;
+                canvas.DrawRect(xPointOpenClose, yPointVolume, openCloseStickWidth, volume, volumeBarPaint);
 
-        }
+                xPointOpenClose += openCloseStickWidth;
+                xPointHighLow += openCloseStickWidth / 2;
 
-        private void canvasView_volume(object sender, SKPaintSurfaceEventArgs e)
-        {
-            // Get Canvas info
-            SKImageInfo info = e.Info;
-            SKSurface surface = e.Surface;
-            SKCanvas canvas = surface.Canvas;
+                //System.Diagnostics.Debug.WriteLine("__test__" + xPointHighLow);
+                //System.Diagnostics.Debug.WriteLine("__test__" + xPointOpenClose);
 
-            canvas.Clear(SKColors.White);
-
-            // Get LegList data from JSON
-            var propLegList = json["LegList"];
-            int legListNumber = propLegList.Count();
-
-            float volumeCanvasHeight = volume_CanvasView.CanvasSize.Height;
-            float volumeCanvasWidth = volume_CanvasView.CanvasSize.Width;
-            float volumeBarWidth = volumeCanvasWidth / legListNumber;
-
-            // Plot the data in chart
-            foreach (var prop in propLegList)
-            {
-                float volumeBarHeight = (float)prop[6] / 50;
-                float xTranslate = volumeBarWidth;
-                float yTranslate = volumeCanvasHeight - volumeBarHeight;
-
-                // Plot Volume bar
-                // Compare openPrice and closePrice and plot them based on color
-                if ((float)prop[4] <= (float)prop[5])
-                {
-                    canvas.Translate(0, yTranslate);
-                    canvas.DrawRect(0, 0, volumeBarWidth, volumeBarHeight, volumeBarPaintPos);
-                    canvas.Translate(xTranslate, -yTranslate);
-                } else
-                {
-                    canvas.Translate(0, yTranslate);
-                    canvas.DrawRect(0, 0, volumeBarWidth, volumeBarHeight, volumeBarPaintNeg);
-                    canvas.Translate(xTranslate, -yTranslate);
-                }
-                
-                    
             }
 
         }
