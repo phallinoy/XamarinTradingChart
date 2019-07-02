@@ -76,10 +76,40 @@ namespace ChartTesting
             float xPointOpenClose = 0;
             float xPointHighLow = 0;
 
+            // Testing
+            float biggest = 0;
+
+            foreach (var prop in propLegList)
+            {
+                float volume = (float)prop[6];
+                if(volume > biggest)
+                {
+                    biggest = volume;
+                }
+            }
+
+            foreach (var prop in propLegList)
+            {
+                float volume = (float)prop[6];
+                if (volume > biggest)
+                {
+                    biggest = volume;
+                }
+            }
+
+            System.Console.WriteLine("__biggest__" + biggest);
+
+            float scaling = ((canvasHeight/2)/biggest);
+
+            System.Console.WriteLine("__abc__" + scaling);
+
+            // Testing //
+
             // Plot the data in chart
             foreach (var prop in propLegList)
             {
                 float openCloseStickWidth = canvasWidth / legListNumber;
+                float volumeStickWidth = openCloseStickWidth;
 
                 float highPrice = (float)prop[2];
                 float lowPrice = (float)prop[3];
@@ -109,9 +139,10 @@ namespace ChartTesting
                 canvas.DrawRect(xPointOpenClose, yPointOpenClose, openCloseStickWidth, openCloseHeight, openCloseStickPaint);
 
                 // Plot Volume chart
-                float volume = (float)prop[6] / 100;
+                // The value of volume multiply with scaling to reduce the height of volume to fit half of the screen.
+                float volume = (float)prop[6] * scaling;
                 float yPointVolume = canvasHeight - volume;
-                canvas.DrawRect(xPointOpenClose, yPointVolume, openCloseStickWidth, volume, volumeBarPaint);
+                canvas.DrawRect(xPointOpenClose, yPointVolume, volumeStickWidth, volume, volumeBarPaint);
 
                 xPointOpenClose += openCloseStickWidth;
                 xPointHighLow += openCloseStickWidth / 2;
