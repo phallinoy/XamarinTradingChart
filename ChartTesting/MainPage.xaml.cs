@@ -35,6 +35,12 @@ namespace ChartTesting
             Color = SKColors.Gray
         };
 
+        SKPaint linePaint = new SKPaint
+        {
+            Style = SKPaintStyle.Fill,
+            Color = SKColors.Gray
+        };
+
         public MainPage()
         {
 
@@ -70,40 +76,49 @@ namespace ChartTesting
             float canvasHeight = ChartCanvasView.CanvasSize.Height;
             float canvasWidth = ChartCanvasView.CanvasSize.Width;
 
+            // Volume chart background
+            float lineHeight = canvasHeight * (float)0.75;
+            float lineWidth = canvasWidth;
+            canvas.DrawLine(0, lineHeight, lineWidth, lineHeight, linePaint);
+
             // Get LegList data from JSON
             var propLegList = json["LegList"];
             int legListNumber = propLegList.Count();
             float xPointOpenClose = 0;
             float xPointHighLow = 0;
 
-            // Testing
+            // Find biggest volume
             float biggest = 0;
 
             foreach (var prop in propLegList)
             {
-                float volume = (float)prop[6];
-                if(volume > biggest)
+                if (prop[6].Type.ToString() != "Null")
                 {
-                    biggest = volume;
+                    float volume = (float)prop[6];
+                    if (volume > biggest)
+                    {
+                        biggest = volume;
+                    }
                 }
             }
 
+            // Find biggest & smallest number among High & Low
+            // Find the range between biggest and smallest (range)
+            float highest = 0;
+            Nullable<float> lowest = null;
+            float range = 0;
             foreach (var prop in propLegList)
             {
-                float volume = (float)prop[6];
-                if (volume > biggest)
+                if ((float)prop[2] > highest)
                 {
-                    biggest = volume;
+                    highest = (float)prop[2];
+                }
+                if (lowest == null || (float)prop[3] < lowest)
+                {
+                    lowest = (float)prop[3];
                 }
             }
-
-            System.Console.WriteLine("__biggest__" + biggest);
-
-            float scaling = ((canvasHeight/2)/biggest);
-
-            System.Console.WriteLine("__abc__" + scaling);
-
-            // Testing //
+            range = highest - (float)lowest;
 
             // Plot the data in chart
             foreach (var prop in propLegList)
@@ -115,32 +130,86 @@ namespace ChartTesting
                 float lowPrice = (float)prop[3];
                 float openPrice = (float)prop[4];
                 float closePrice = (float)prop[5];
-                float yPointHighLow = (canvasHeight / 2) - highPrice;
-                float openCloseHeight = System.Math.Abs(openPrice - closePrice);
-                float highLowHeight = highPrice - lowPrice;
+                float volume = 0;
+                //float yPointHighLow = (canvasHeight * (float)0.75) - highPrice;
+                //float openCloseHeight = System.Math.Abs(openPrice - closePrice);
+                //float highLowHeight = highPrice - lowPrice;
+                //float yPointOpenClose = 0;
+                //xPointHighLow += openCloseStickWidth / 2;
+
+                //if (openPrice <= closePrice)
+                //{
+                //    yPointOpenClose = (canvasHeight * (float)0.75) - closePrice;
+                //    openCloseStickPaint.Color = SKColors.Green;
+                //    volumeBarPaint.Color = SKColors.Gray;
+                //}
+                //else
+                //{
+                //    yPointOpenClose = (canvasHeight * (float)0.75) - openPrice;
+                //    openCloseStickPaint.Color = SKColors.Red;
+                //    volumeBarPaint.Color = SKColors.DarkGray;
+                //}
+
+                // Scaling OHLC chart
+                //
+                float ohlcChartHeight = canvasHeight * (float)0.75;
+                // Find the range between HighPrice and lowest (highRange)
+                float highRange = highPrice - (float)lowest;
+                // Find the range between LowPrice and lowest (lowRange)
+                float lowRange = lowPrice - (float)lowest;
+                // highPrice = (highRange / range) * chartHeight
+                float scaleHighPrice = (highRange / range) * ohlcChartHeight;
+                // lowPrice = (lowRange / range) * chartHeight 
+                float scaleLowPrice = (lowRange / range) * ohlcChartHeight;
+                // 
+                // Find the range between Open and smallest (openRange)
+                float openRange = openPrice - (float)lowest;
+                // Find the range between Close and smallest (closeRange)
+                float closeRange = closePrice - (float)lowest;
+                // openPrice = (openRange / range) * chartHeight
+                float scaleOpenPrice = (openRange / range) * ohlcChartHeight;
+                // closePrice = (closeRange / range) * chartHeight
+                float scaleClosePrice = (closeRange / range) * ohlcChartHeight;
+                //
+
+                float yPointHighLow = ohlcChartHeight - scaleHighPrice;
+                float openCloseHeight = System.Math.Abs(scaleOpenPrice - scaleClosePrice);
+                float highLowHeight = scaleHighPrice - scaleLowPrice;
                 float yPointOpenClose = 0;
                 xPointHighLow += openCloseStickWidth / 2;
 
-                if (openPrice <= closePrice)
+                if (scaleOpenPrice <= scaleClosePrice)
                 {
-                    yPointOpenClose = (canvasHeight / 2) - closePrice;
+                    yPointOpenClose = ohlcChartHeight - scaleClosePrice;
                     openCloseStickPaint.Color = SKColors.Green;
                     volumeBarPaint.Color = SKColors.Gray;
                 }
                 else
                 {
-                    yPointOpenClose = (canvasHeight / 2) - openPrice;
+                    yPointOpenClose = ohlcChartHeight - scaleOpenPrice;
                     openCloseStickPaint.Color = SKColors.Red;
                     volumeBarPaint.Color = SKColors.DarkGray;
                 }
+
+                // Scaling OHLC chart //
 
                 // Plot OHLC chart
                 canvas.DrawRect(xPointHighLow - 1, yPointHighLow, 2, highLowHeight, volumeBarPaint);
                 canvas.DrawRect(xPointOpenClose, yPointOpenClose, openCloseStickWidth, openCloseHeight, openCloseStickPaint);
 
                 // Plot Volume chart
-                // The value of volume multiply with scaling to reduce the height of volume to fit half of the screen.
-                float volume = (float)prop[6] * scaling;
+                // Handle null value
+                float scaling = ((canvasHeight * (float)0.25) / biggest);
+
+                if (prop[6].Type.ToString() != "Null")
+                {
+                    volume = (float)prop[6] * scaling;
+                }
+                else
+                {
+                    volume = 0;
+                }
+
                 float yPointVolume = canvasHeight - volume;
                 canvas.DrawRect(xPointOpenClose, yPointVolume, volumeStickWidth, volume, volumeBarPaint);
 
