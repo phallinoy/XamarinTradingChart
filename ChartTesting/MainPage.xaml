@@ -7,17 +7,16 @@
              mc:Ignorable="d"
              x:Class="ChartTesting.MainPage">
 
-    
 
-        <!-- CanvasView occupying 2/3 page -  OHLC chart. -->
-        <skia:SKCanvasView x:Name="ChartCanvasView"
-                       PaintSurface="ChartCanvas_PaintSurface"/>
-        
-        <!-- CanvasView occupying 1/3 page -  Volume chart. -->
-        <!--<skia:SKCanvasView x:Name="volume_CanvasView"
-                       PaintSurface="canvasView_volume"
-                           Grid.Row="1"
-                           Grid.Column="0"/>-->
+    <skia:SKCanvasView x:Name="ChartCanvasView"
+                       PaintSurface="ChartCanvas_PaintSurface">
+        <skia:SKCanvasView.GestureRecognizers>
+            <SwipeGestureRecognizer Direction="Left" Swiped="OnSwiped"/>
+            <SwipeGestureRecognizer Direction="Right" Swiped="OnSwiped"/>
+            <SwipeGestureRecognizer Direction="Up" Swiped="OnSwiped"/>
+            <SwipeGestureRecognizer Direction="Down" Swiped="OnSwiped"/>
+        </skia:SKCanvasView.GestureRecognizers>
+    </skia:SKCanvasView>
 
-    
+
 </ContentPage>

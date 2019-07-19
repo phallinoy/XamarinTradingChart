@@ -13,6 +13,7 @@ using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace ChartTesting
 {
@@ -41,12 +42,41 @@ namespace ChartTesting
             Color = SKColors.Gray
         };
 
+        public static readonly BindableProperty WidthTestProperty =
+            BindableProperty.Create("WidthTest", typeof(float), typeof(MainPage), "");
+        public float WidthTest
+        {
+            get { return (float)GetValue(WidthTestProperty); }
+            set { SetValue(WidthTestProperty, value); }
+        }
+
         public MainPage()
         {
 
             InitializeComponent();
             GetJsonData();
 
+        }
+
+        // Handle Swipe gestures
+        void OnSwiped(object sender, SwipedEventArgs e)
+        {
+            switch (e.Direction)
+            {
+                case SwipeDirection.Left:
+                    System.Console.WriteLine("___test___" + e.Direction.ToString());
+                    WidthTest = 400;
+                    break;
+                case SwipeDirection.Right:
+                    System.Console.WriteLine("___test___" + e.Direction.ToString());
+                    break;
+                case SwipeDirection.Up:
+                    System.Console.WriteLine("___test___" + e.Direction.ToString());
+                    break;
+                case SwipeDirection.Down:
+                    System.Console.WriteLine("___test___" + e.Direction.ToString());
+                    break;
+            }
         }
 
         // Get JSON data
@@ -75,6 +105,13 @@ namespace ChartTesting
 
             float canvasHeight = ChartCanvasView.CanvasSize.Height;
             float canvasWidth = ChartCanvasView.CanvasSize.Width;
+
+            // testing
+            //
+            WidthTest = 100;
+            canvas.DrawRect(100, 100, WidthTest, 300, openCloseStickPaint);
+            //
+            // testing //
 
             // Volume chart background
             float lineHeight = canvasHeight * (float)0.75;
@@ -131,24 +168,6 @@ namespace ChartTesting
                 float openPrice = (float)prop[4];
                 float closePrice = (float)prop[5];
                 float volume = 0;
-                //float yPointHighLow = (canvasHeight * (float)0.75) - highPrice;
-                //float openCloseHeight = System.Math.Abs(openPrice - closePrice);
-                //float highLowHeight = highPrice - lowPrice;
-                //float yPointOpenClose = 0;
-                //xPointHighLow += openCloseStickWidth / 2;
-
-                //if (openPrice <= closePrice)
-                //{
-                //    yPointOpenClose = (canvasHeight * (float)0.75) - closePrice;
-                //    openCloseStickPaint.Color = SKColors.Green;
-                //    volumeBarPaint.Color = SKColors.Gray;
-                //}
-                //else
-                //{
-                //    yPointOpenClose = (canvasHeight * (float)0.75) - openPrice;
-                //    openCloseStickPaint.Color = SKColors.Red;
-                //    volumeBarPaint.Color = SKColors.DarkGray;
-                //}
 
                 // Scaling OHLC chart
                 //
@@ -216,11 +235,17 @@ namespace ChartTesting
                 xPointOpenClose += openCloseStickWidth;
                 xPointHighLow += openCloseStickWidth / 2;
 
-                //System.Diagnostics.Debug.WriteLine("__test__" + xPointHighLow);
-                //System.Diagnostics.Debug.WriteLine("__test__" + xPointOpenClose);
-
             }
 
+        }
+
+        protected override void OnPropertyChanged(string propertyName = null)
+        {
+            base.OnPropertyChanged(propertyName);
+            if (propertyName == WidthTestProperty.PropertyName)
+            {
+                //this.InvalidateSurface();
+            }
         }
 
     }
