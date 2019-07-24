@@ -23,6 +23,8 @@ namespace ChartTesting
     public partial class MainPage : ContentPage
     {
         JObject json;
+        private double valueX, valueY;
+        private bool IsTurnX, IsTurnY;
 
         SKPaint openCloseStickPaint = new SKPaint
         {
@@ -67,6 +69,12 @@ namespace ChartTesting
             // Set default array index
             ArrayStart = 0;
             ArrayRange = 30;
+
+            //Testing
+            _OpenPrice.Text = "O:" + ArrayStart;
+            
+            //Testing//
+
         }
 
         // Get JSON data
@@ -83,30 +91,83 @@ namespace ChartTesting
             return;
         }
 
-        // Handle Swipe gestures
-        // Swipe up/down to increase/decrease data range 5 elements (Minimum data range is 10)
-        // Swipe left/right to scroll left/right 5 elements
-        void OnSwiped(object sender, SwipedEventArgs e)
+        void OnPanUpdated(object sender, PanUpdatedEventArgs args)
         {
-            switch (e.Direction)
+            // PanGestureRecognizer
+            var x = args.TotalX * 0.2; // TotalX Left/Right
+            var y = args.TotalY * 0.2; // TotalY Up/Down
+
+            // StatusType
+            switch (args.StatusType)
             {
-                case SwipeDirection.Left:
-                    ArrayStart += 5;
+                case GestureStatus.Started:
+                    Console.WriteLine("___Started");
                     break;
-                case SwipeDirection.Right:
-                    if (ArrayStart >= 5)
+                case GestureStatus.Running:
+
+                    // Check that the movement is x or y
+                    if ((x >= 5 || x <= -5) && !IsTurnX && !IsTurnY)
                     {
-                        ArrayStart -= 5;
+                        IsTurnX = true;
                     }
-                    break;
-                case SwipeDirection.Up:
-                    ArrayRange += 5;
-                    break;
-                case SwipeDirection.Down:
-                    if (ArrayRange > 10)
+
+                    if ((y >= 5 || y <= -5) && !IsTurnY && !IsTurnX)
                     {
-                        ArrayRange -= 5;
+                        IsTurnY = true;
                     }
+
+                    // X (Horizontal)
+                    if (IsTurnX && !IsTurnY)
+                    {
+                        if (x <= valueX)
+                        {
+                            // Left
+                            Console.WriteLine("___left");
+                            ArrayStart += 1;
+                        }
+
+                        if (x >= valueX)
+                        {
+                            // Right
+                            if (ArrayStart >= 1)
+                            {
+                                ArrayStart -= 1;
+                                Console.WriteLine("___right");
+                            }
+                        }
+                    }
+
+                    // Y (Vertical)
+                    if (IsTurnY && !IsTurnX)
+                    {
+                        if (y <= valueY)
+                        {
+                            // Up
+                            Console.WriteLine("___up");
+                            ArrayRange += 1;
+                        }
+
+                        if (y >= valueY)
+                        {
+                            // Down
+                            if (ArrayRange > 10)
+                            {
+                                ArrayRange -= 1;
+                                Console.WriteLine("___down");
+                            }
+                        }
+                    }
+
+                    break;
+                case GestureStatus.Completed:
+                    Console.WriteLine("___Completed");
+
+                    valueX = x;
+                    valueY = y;
+
+                    IsTurnX = false;
+                    IsTurnY = false;
+
                     break;
             }
         }
@@ -114,12 +175,23 @@ namespace ChartTesting
         // Plot chart
         private void ChartCanvas_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
         {
+
             // Get Canvas info
             SKImageInfo info = e.Info;
             SKSurface surface = e.Surface;
             SKCanvas canvas = surface.Canvas;
 
             canvas.Clear(SKColors.White);
+
+            //testing
+            //var tapGestureRecognizer = new TapGestureRecognizer();
+            //tapGestureRecognizer.Tapped += (s, arg) => {
+            //    // handle the tap
+            //    _OpenPrice.Text = "Touched";
+                
+            //};
+            //ChartCanvasView.GestureRecognizers.Add(tapGestureRecognizer);
+            //testing//
 
             float canvasHeight = ChartCanvasView.CanvasSize.Height;
             float canvasWidth = ChartCanvasView.CanvasSize.Width;

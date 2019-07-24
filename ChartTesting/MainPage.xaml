@@ -7,16 +7,28 @@
              mc:Ignorable="d"
              x:Class="ChartTesting.MainPage">
 
+    <AbsoluteLayout>
+        
+        <skia:SKCanvasView x:Name="ChartCanvasView"
+                           PaintSurface="ChartCanvas_PaintSurface"
+                           AbsoluteLayout.LayoutBounds="0,0,1,1"
+                           AbsoluteLayout.LayoutFlags="All">
+            <skia:SKCanvasView.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnPanUpdated"/>
+            </skia:SKCanvasView.GestureRecognizers>
+        </skia:SKCanvasView>
+        <StackLayout Orientation="Horizontal">
+            <Label x:Name="_OpenPrice" 
+                   Text="O:" />
+            <Label x:Name="_HighPrice" 
+                   Text="{Binding OpenPrice, StringFormat='H:{0:F1}'}" />
+            <Label x:Name="_LowPrice" 
+                   Text="{Binding OpenPrice, StringFormat='L:{0:F1}'}" />
+            <Label x:Name="_ClosePrice" 
+                   Text="{Binding OpenPrice, StringFormat='C:{0:F1}'}" />
+        </StackLayout>
+        
 
-    <skia:SKCanvasView x:Name="ChartCanvasView"
-                       PaintSurface="ChartCanvas_PaintSurface">
-        <skia:SKCanvasView.GestureRecognizers>
-            <SwipeGestureRecognizer Direction="Left" Swiped="OnSwiped"/>
-            <SwipeGestureRecognizer Direction="Right" Swiped="OnSwiped"/>
-            <SwipeGestureRecognizer Direction="Up" Swiped="OnSwiped"/>
-            <SwipeGestureRecognizer Direction="Down" Swiped="OnSwiped"/>
-        </skia:SKCanvasView.GestureRecognizers>
-    </skia:SKCanvasView>
-
-
+    </AbsoluteLayout>
+    
 </ContentPage>
