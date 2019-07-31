@@ -8,27 +8,19 @@
              x:Class="ChartTesting.MainPage">
 
     <AbsoluteLayout>
-        
+
         <skia:SKCanvasView x:Name="ChartCanvasView"
                            PaintSurface="ChartCanvas_PaintSurface"
                            AbsoluteLayout.LayoutBounds="0,0,1,1"
-                           AbsoluteLayout.LayoutFlags="All">
-            <skia:SKCanvasView.GestureRecognizers>
-                <PanGestureRecognizer PanUpdated="OnPanUpdated"/>
-            </skia:SKCanvasView.GestureRecognizers>
-        </skia:SKCanvasView>
+                           AbsoluteLayout.LayoutFlags="All"
+                           EnableTouchEvents="True"
+                           Touch="OnTouch" />
+
         <StackLayout Orientation="Horizontal">
             <Label x:Name="_OpenPrice" 
                    Text="O:" />
-            <Label x:Name="_HighPrice" 
-                   Text="{Binding OpenPrice, StringFormat='H:{0:F1}'}" />
-            <Label x:Name="_LowPrice" 
-                   Text="{Binding OpenPrice, StringFormat='L:{0:F1}'}" />
-            <Label x:Name="_ClosePrice" 
-                   Text="{Binding OpenPrice, StringFormat='C:{0:F1}'}" />
         </StackLayout>
-        
 
     </AbsoluteLayout>
-    
+
 </ContentPage>

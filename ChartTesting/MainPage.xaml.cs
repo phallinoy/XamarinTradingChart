@@ -23,8 +23,12 @@ namespace ChartTesting
     public partial class MainPage : ContentPage
     {
         JObject json;
-        private double valueX, valueY;
-        private bool IsTurnX, IsTurnY;
+        double valueX, valueY;
+        bool IsTurnX, IsTurnY;
+        double xInitial = 0, yInitial = 0;
+        double xDistance = 0, yDistance = 0;
+        int arrayCount;
+        Array testList;
 
         SKPaint openCloseStickPaint = new SKPaint
         {
@@ -72,7 +76,7 @@ namespace ChartTesting
 
             //Testing
             _OpenPrice.Text = "O:" + ArrayStart;
-            
+
             //Testing//
 
         }
@@ -96,6 +100,8 @@ namespace ChartTesting
             // PanGestureRecognizer
             var x = args.TotalX * 0.2; // TotalX Left/Right
             var y = args.TotalY * 0.2; // TotalY Up/Down
+            //Console.WriteLine("___x = " + x);
+            //Console.WriteLine("___y = " + y);
 
             // StatusType
             switch (args.StatusType)
@@ -109,11 +115,13 @@ namespace ChartTesting
                     if ((x >= 5 || x <= -5) && !IsTurnX && !IsTurnY)
                     {
                         IsTurnX = true;
+                        Console.WriteLine("___isTurnX: " + x + ":" + y);
                     }
 
                     if ((y >= 5 || y <= -5) && !IsTurnY && !IsTurnX)
                     {
                         IsTurnY = true;
+                        Console.WriteLine("___isTurnY: " + x + ":" + y);
                     }
 
                     // X (Horizontal)
@@ -122,8 +130,11 @@ namespace ChartTesting
                         if (x <= valueX)
                         {
                             // Left
-                            Console.WriteLine("___left");
-                            ArrayStart += 1;
+                            if (ArrayStart + ArrayRange < arrayCount)
+                            {
+                                ArrayStart += 1;
+                                Console.WriteLine("___left");
+                            }
                         }
 
                         if (x >= valueX)
@@ -143,8 +154,8 @@ namespace ChartTesting
                         if (y <= valueY)
                         {
                             // Up
-                            Console.WriteLine("___up");
                             ArrayRange += 1;
+                            Console.WriteLine("___up");
                         }
 
                         if (y >= valueY)
@@ -172,6 +183,101 @@ namespace ChartTesting
             }
         }
 
+        private void OnTouch(object sender, SKTouchEventArgs e)
+        {
+            //Console.WriteLine("hell");
+            var x = e.Location.X * 0.1;
+            var y = e.Location.Y * 0.1;
+
+            // find direction
+            switch (e.ActionType)
+            {
+                case SKTouchAction.Pressed:
+                    Console.WriteLine("___pressed");
+                    
+                    xInitial = x;
+                    yInitial = y;
+
+                    // Display OHLC value
+                    Console.WriteLine("___x:" + e.Location.X + " y:" + e.Location.Y);
+                    Console.WriteLine("___count: " + testList.Length);
+                    break;
+                case SKTouchAction.Moved:
+                    xDistance = x - xInitial;
+                    yDistance = y - yInitial;
+
+                    // Get scroll direction here
+                    // Check that the movement is x or y
+                    if ((xDistance >= 5 || xDistance <= -5) && !IsTurnX && !IsTurnY)
+                    {
+                        IsTurnX = true;
+                    }
+
+                    if ((yDistance >= 5 || yDistance <= -5) && !IsTurnY && !IsTurnX)
+                    {
+                        IsTurnY = true;
+                    }
+
+                    // X (Horizontal)
+                    if (IsTurnX && !IsTurnY)
+                    {
+                        if (xDistance <= valueX)
+                        {
+                            // Left
+                            if (ArrayStart + ArrayRange < arrayCount)
+                            {
+                                ArrayStart += 1;
+                                Console.WriteLine("___left");
+                            }
+                        }
+
+                        if (xDistance >= valueX)
+                        {
+                            // Right
+                            if (ArrayStart >= 1)
+                            {
+                                ArrayStart -= 1;
+                                Console.WriteLine("___right");
+                            }
+                        }
+                    }
+
+                    // Y (Vertical)
+                    if (IsTurnY && !IsTurnX)
+                    {
+                        if (yDistance <= valueY)
+                        {
+                            // Up
+                            ArrayRange += 1;
+                            Console.WriteLine("___up");
+                        }
+
+                        if (yDistance >= valueY)
+                        {
+                            // Down
+                            if (ArrayRange > 10)
+                            {
+                                ArrayRange -= 1;
+                                Console.WriteLine("___down");
+                            }
+                        }
+                    }
+                    // End find direction
+
+                    break;
+                case SKTouchAction.Released:
+                    Console.WriteLine("___released");
+
+                    IsTurnX = false;
+                    IsTurnY = false;
+                    break;
+            }
+
+            e.Handled = true;
+            // update the UI on the screen
+            ((SKCanvasView)sender).InvalidateSurface();
+        }
+
         // Plot chart
         private void ChartCanvas_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
         {
@@ -183,16 +289,6 @@ namespace ChartTesting
 
             canvas.Clear(SKColors.White);
 
-            //testing
-            //var tapGestureRecognizer = new TapGestureRecognizer();
-            //tapGestureRecognizer.Tapped += (s, arg) => {
-            //    // handle the tap
-            //    _OpenPrice.Text = "Touched";
-                
-            //};
-            //ChartCanvasView.GestureRecognizers.Add(tapGestureRecognizer);
-            //testing//
-
             float canvasHeight = ChartCanvasView.CanvasSize.Height;
             float canvasWidth = ChartCanvasView.CanvasSize.Width;
 
@@ -203,7 +299,10 @@ namespace ChartTesting
 
             // Get LegList data from JSON
             var legList = json["LegList"];
+            arrayCount = legList.Count();
+
             var subLegList = legList.Skip(ArrayStart).Take(ArrayRange).ToArray();
+            testList = subLegList;
 
             float xPointOpenClose = 0;
             float xPointHighLow = 0;
@@ -254,6 +353,17 @@ namespace ChartTesting
                 float closePrice = (float)item[5];
                 float volume = 0;
 
+                //testing
+                var tapGestureRecognizer = new TapGestureRecognizer();
+                tapGestureRecognizer.Tapped += (s, arg) =>
+                {
+                    // handle the tap
+                    _OpenPrice.Text = openPrice.ToString();
+
+                };
+                ChartCanvasView.GestureRecognizers.Add(tapGestureRecognizer);
+                //testing//
+
                 // Scaling OHLC chart
                 //
                 float ohlcChartHeight = canvasHeight * (float)0.75;
@@ -295,7 +405,6 @@ namespace ChartTesting
                     volumeBarPaint.Color = SKColors.DarkGray;
                 }
 
-                // Scaling OHLC chart //
                 // Plot OHLC chart
                 canvas.DrawRect(xPointHighLow - 1, yPointHighLow, 2, highLowHeight, volumeBarPaint);
                 canvas.DrawRect(xPointOpenClose, yPointOpenClose, openCloseStickWidth, openCloseHeight, openCloseStickPaint);
