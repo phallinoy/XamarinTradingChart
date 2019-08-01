@@ -16,9 +16,24 @@
                            EnableTouchEvents="True"
                            Touch="OnTouch" />
 
-        <StackLayout Orientation="Horizontal">
+        <StackLayout Orientation="Horizontal"
+                     Margin="5,5,0,0" >
             <Label x:Name="_OpenPrice" 
-                   Text="O:" />
+                   Text="O:"
+                   FontSize="Medium"
+                   TextColor="#231F20" />
+            <Label x:Name="_HighPrice" 
+                   Text="H:"
+                   FontSize="Medium"
+                   TextColor="#231F20" />
+            <Label x:Name="_LowPrice" 
+                   Text="L:"
+                   FontSize="Medium"
+                   TextColor="#231F20" />
+            <Label x:Name="_ClosePrice" 
+                   Text="C:"
+                   FontSize="Medium"
+                   TextColor="#231F20" />
         </StackLayout>
 
     </AbsoluteLayout>

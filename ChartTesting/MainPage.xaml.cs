@@ -1,19 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xamarin.Forms;
 using SkiaSharp;
 using SkiaSharp.Views.Forms;
 using System.IO;
-using ChartTesting.Model;
 using System.Reflection;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Collections;
-using System.Runtime.CompilerServices;
 
 namespace ChartTesting
 {
@@ -22,14 +15,14 @@ namespace ChartTesting
     [DesignTimeVisible(false)]
     public partial class MainPage : ContentPage
     {
-        JObject json;
+        JToken json;
+        JToken[] subLegList;
         double valueX, valueY;
         bool IsTurnX, IsTurnY;
         double xInitial = 0, yInitial = 0;
         double xDistance = 0, yDistance = 0;
         int arrayCount;
-        Array testList;
-
+        
         SKPaint openCloseStickPaint = new SKPaint
         {
             Style = SKPaintStyle.Fill,
@@ -74,11 +67,6 @@ namespace ChartTesting
             ArrayStart = 0;
             ArrayRange = 30;
 
-            //Testing
-            _OpenPrice.Text = "O:" + ArrayStart;
-
-            //Testing//
-
         }
 
         // Get JSON data
@@ -95,97 +83,8 @@ namespace ChartTesting
             return;
         }
 
-        void OnPanUpdated(object sender, PanUpdatedEventArgs args)
-        {
-            // PanGestureRecognizer
-            var x = args.TotalX * 0.2; // TotalX Left/Right
-            var y = args.TotalY * 0.2; // TotalY Up/Down
-            //Console.WriteLine("___x = " + x);
-            //Console.WriteLine("___y = " + y);
-
-            // StatusType
-            switch (args.StatusType)
-            {
-                case GestureStatus.Started:
-                    Console.WriteLine("___Started");
-                    break;
-                case GestureStatus.Running:
-
-                    // Check that the movement is x or y
-                    if ((x >= 5 || x <= -5) && !IsTurnX && !IsTurnY)
-                    {
-                        IsTurnX = true;
-                        Console.WriteLine("___isTurnX: " + x + ":" + y);
-                    }
-
-                    if ((y >= 5 || y <= -5) && !IsTurnY && !IsTurnX)
-                    {
-                        IsTurnY = true;
-                        Console.WriteLine("___isTurnY: " + x + ":" + y);
-                    }
-
-                    // X (Horizontal)
-                    if (IsTurnX && !IsTurnY)
-                    {
-                        if (x <= valueX)
-                        {
-                            // Left
-                            if (ArrayStart + ArrayRange < arrayCount)
-                            {
-                                ArrayStart += 1;
-                                Console.WriteLine("___left");
-                            }
-                        }
-
-                        if (x >= valueX)
-                        {
-                            // Right
-                            if (ArrayStart >= 1)
-                            {
-                                ArrayStart -= 1;
-                                Console.WriteLine("___right");
-                            }
-                        }
-                    }
-
-                    // Y (Vertical)
-                    if (IsTurnY && !IsTurnX)
-                    {
-                        if (y <= valueY)
-                        {
-                            // Up
-                            ArrayRange += 1;
-                            Console.WriteLine("___up");
-                        }
-
-                        if (y >= valueY)
-                        {
-                            // Down
-                            if (ArrayRange > 10)
-                            {
-                                ArrayRange -= 1;
-                                Console.WriteLine("___down");
-                            }
-                        }
-                    }
-
-                    break;
-                case GestureStatus.Completed:
-                    Console.WriteLine("___Completed");
-
-                    valueX = x;
-                    valueY = y;
-
-                    IsTurnX = false;
-                    IsTurnY = false;
-
-                    break;
-            }
-        }
-
         private void OnTouch(object sender, SKTouchEventArgs e)
         {
-            //Console.WriteLine("hell");
             var x = e.Location.X * 0.1;
             var y = e.Location.Y * 0.1;
 
@@ -193,20 +92,57 @@ namespace ChartTesting
             switch (e.ActionType)
             {
                 case SKTouchAction.Pressed:
-                    Console.WriteLine("___pressed");
-                    
+
                     xInitial = x;
                     yInitial = y;
 
-                    // Display OHLC value
-                    Console.WriteLine("___x:" + e.Location.X + " y:" + e.Location.Y);
-                    Console.WriteLine("___count: " + testList.Length);
+                    // Handle assign OHLC value to UI
+                    float canvasWidth = ChartCanvasView.CanvasSize.Width;
+                    float candleStart = 0;
+                    float candleWidth = canvasWidth / ArrayRange;
+                    float candleEnd = candleWidth;
+
+                    int i = 0;
+                    int index = ArrayStart;
+
+                    // Find which rectangle was pressed
+                    for (var a = 0; a < ArrayRange; a++)
+                    {
+                        if (e.Location.X >= candleStart && e.Location.X < candleEnd)
+                        {
+                            Console.WriteLine("___pressed on: " + index);
+                            break;
+                        }
+
+                        index++;
+                        candleStart += candleWidth;
+                        candleEnd += candleWidth;
+                    }
+
+                    // Assign OHLC value
+                    var legList = json["LegList"];
+
+                    foreach (var item in legList)
+                    {
+                        if (i == index)
+                        {
+                            _OpenPrice.Text = "O:" + item[4].ToString();
+                            _HighPrice.Text = "H:" + item[2].ToString();
+                            _LowPrice.Text = "L:" + item[3].ToString();
+                            _ClosePrice.Text = "C:" + item[5].ToString();
+
+                            break;
+                        }
+
+                        i++;
+                    }
+
                     break;
                 case SKTouchAction.Moved:
+                    // Handle scroll left, right, up, down
                     xDistance = x - xInitial;
                     yDistance = y - yInitial;
 
-                    // Get scroll direction here
                     // Check that the movement is x or y
                     if ((xDistance >= 5 || xDistance <= -5) && !IsTurnX && !IsTurnY)
                     {
@@ -301,8 +237,8 @@ namespace ChartTesting
             var legList = json["LegList"];
             arrayCount = legList.Count();
 
-            var subLegList = legList.Skip(ArrayStart).Take(ArrayRange).ToArray();
-            testList = subLegList;
+            // SubLegList data to display on screen
+            subLegList = legList.Skip(ArrayStart).Take(ArrayRange).ToArray();
 
             float xPointOpenClose = 0;
             float xPointHighLow = 0;
@@ -343,7 +279,6 @@ namespace ChartTesting
             // Plot the data in chart
             foreach (var item in subLegList)
             {
-                //float openCloseStickWidth = canvasWidth / legListNumber;
                 float openCloseStickWidth = canvasWidth / ArrayRange;
                 float volumeStickWidth = openCloseStickWidth;
 
@@ -353,20 +288,10 @@ namespace ChartTesting
                 float closePrice = (float)item[5];
                 float volume = 0;
 
-                //testing
-                var tapGestureRecognizer = new TapGestureRecognizer();
-                tapGestureRecognizer.Tapped += (s, arg) =>
-                {
-                    // handle the tap
-                    _OpenPrice.Text = openPrice.ToString();
-
-                };
-                ChartCanvasView.GestureRecognizers.Add(tapGestureRecognizer);
-                //testing//
-
                 // Scaling OHLC chart
-                //
+                
                 float ohlcChartHeight = canvasHeight * (float)0.75;
+
                 // Find the range between HighPrice and lowest (highRange)
                 float highRange = highPrice - (float)lowest;
                 // Find the range between LowPrice and lowest (lowRange)
@@ -375,7 +300,7 @@ namespace ChartTesting
                 float scaleHighPrice = (highRange / range) * ohlcChartHeight;
                 // lowPrice = (lowRange / range) * chartHeight 
                 float scaleLowPrice = (lowRange / range) * ohlcChartHeight;
-                // 
+                
                 // Find the range between Open and smallest (openRange)
                 float openRange = openPrice - (float)lowest;
                 // Find the range between Close and smallest (closeRange)
@@ -384,7 +309,6 @@ namespace ChartTesting
                 float scaleOpenPrice = (openRange / range) * ohlcChartHeight;
                 // closePrice = (closeRange / range) * chartHeight
                 float scaleClosePrice = (closeRange / range) * ohlcChartHeight;
-                //
 
                 float yPointHighLow = ohlcChartHeight - scaleHighPrice;
                 float openCloseHeight = System.Math.Abs(scaleOpenPrice - scaleClosePrice);
